@@ -3,7 +3,7 @@
 ## create a var file e.g. .tvars (this is in .gitignore)
 
 ```bash
-cp example.tfvars  .tfvars 
+cp example.tfvars  .tfvars
 ```
 
 ### install dependencies
