@@ -46,6 +46,7 @@ resource "azurerm_network_security_group" "ssh_nsg" {
   }
 }
 
+
 resource "azurerm_network_interface" "devopsrg_Web_NIC" {
   name                = "devopsrg-web-nic"
   location            = azurerm_resource_group.devops_rg.location
@@ -68,39 +69,51 @@ resource "azurerm_network_interface_security_group_association" "ssh_sg_associat
 
 
 // Define the Azure Virtual Machine resources for the Web VM.
-resource "azurerm_virtual_machine" "devopsrg_Web_VM" {
+resource "azurerm_linux_virtual_machine" "devopsrg_Web_VM" {
   name                  = "devopsrg-web-vm"
   location              = azurerm_resource_group.devops_rg.location
   resource_group_name   = azurerm_resource_group.devops_rg.name
   network_interface_ids = [azurerm_network_interface.devopsrg_Web_NIC.id]
-  vm_size               = var.vm_size
+  size               = var.vm_size
+  admin_username      = "azureuser"
 
-  storage_os_disk {
-    name              = "web-os-disk"
-    caching           = "ReadWrite"
-    create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
+
+  admin_ssh_key {
+    username   = "azureuser"
+    public_key = var.ssh_public_key
   }
 
-  storage_image_reference {
+  os_disk {
+    name              = "web-os-disk"
+    caching           = "ReadWrite"
+    # create_option     = "FromImage"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
     publisher = "Canonical"
-    offer     = "UbuntuServer"
-    sku       = "18.04-LTS"
+    offer     = "ubuntu-24_04-lts"
+    sku       = "server"
     version   = "latest"
   }
 
-  delete_os_disk_on_termination = true  # Ensure OS disk is deleted when the VM is destroyed
-  os_profile {
-    computer_name  = "devopsrg-web-vm"
-    admin_username = "adminuser"
-    admin_password = "P@ssw0rd1234!"
-  }
-
-  os_profile_linux_config {
-    disable_password_authentication = false
-  }
-
+  
   depends_on = [azurerm_public_ip.devopsrg_Web_PIP]
 }
 
 
+resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_shutdown" {
+  virtual_machine_id = azurerm_linux_virtual_machine.devopsrg_Web_VM.id
+  location           = azurerm_resource_group.devops_rg.location
+
+  daily_recurrence_time = "2200" # 10 PM local time (Athens)
+  timezone              = "E. Europe Standard Time" # Athens timezone
+
+  enabled = true
+
+  notification_settings {
+    enabled         = false  # Set to true if you want email notifications
+    email           = var.email
+    time_in_minutes = 30     # Notify 30 minutes before shutdown
+  }
+}

@@ -18,3 +18,13 @@ variable "sub_id" {
   description = "The subscription ID for the Azure account."
   type        = string
 }
+
+variable "ssh_public_key" {
+  description = "SSH Public Key for VM access"
+  type        = string
+}
+
+variable "email" {
+  description = "Email address for the Azure account."
+  type        = string
+}
