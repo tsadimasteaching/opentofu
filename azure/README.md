@@ -7,7 +7,7 @@
 ## create a var file e.g. .tvars (this is in .gitignore)
 
 ```bash
-cp example.tfvars  .tfvars
+cp example.vars  .tfvars
 ```
 
 ### install dependencies
@@ -28,7 +28,7 @@ tofu plan --var-file=.tfvars
 tofu apply --var-file=.tfvars
 ```
 
-
+* Public ip will be printed using outputs.tf
 
 https://www.iamachs.com/p/opentofu-azure/part-1-deploy-multi-tier-app-guide/
 https://learn.microsoft.com/en-us/azure/virtual-machines/windows/quick-create-terraform

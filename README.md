@@ -7,3 +7,4 @@ This is a sample opentofu repository
 This repo has sample code for the following providers:
 * azure
 * devstack
+* gcloudQ
