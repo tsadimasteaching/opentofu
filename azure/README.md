@@ -1,4 +1,8 @@
+# Prerequisites
 
+* have an account in azure portal with a subscription
+* [az cli](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli)
+* login to your azure account from az cli ``az login`` and select the appropriate subscription [Azure Provider]* read (https://search.opentofu.org/provider/opentofu/azurerm/latest) documementation
 
 ## create a var file e.g. .tvars (this is in .gitignore)
 
