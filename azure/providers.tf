@@ -17,5 +17,5 @@ terraform {
 // Define the Azure Resource Group that will be used by all resources in our configuration.
 provider "azurerm" {
   features {}
-  subscription_id = "954b35e0-374a-4ad9-9b6a-c56889734a6a"
+  subscription_id = var.sub_id
 }

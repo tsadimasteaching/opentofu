@@ -26,6 +26,26 @@ resource "azurerm_public_ip" "devopsrg_Web_PIP" {
   allocation_method   = "Static"
 }
 
+
+# Create Network Security Group and rule
+resource "azurerm_network_security_group" "ssh_nsg" {
+  name                = "myNetworkSecurityGroup"
+  location            = azurerm_resource_group.devops_rg.location
+  resource_group_name = azurerm_resource_group.devops_rg.name
+
+  security_rule {
+    name                       = "SSH"
+    priority                   = 1001
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
+
 resource "azurerm_network_interface" "devopsrg_Web_NIC" {
   name                = "devopsrg-web-nic"
   location            = azurerm_resource_group.devops_rg.location
@@ -38,6 +58,14 @@ resource "azurerm_network_interface" "devopsrg_Web_NIC" {
     public_ip_address_id          = azurerm_public_ip.devopsrg_Web_PIP.id
   }
 }
+
+
+# Connect the security group to the network interface
+resource "azurerm_network_interface_security_group_association" "ssh_sg_association" {
+  network_interface_id      = azurerm_network_interface.devopsrg_Web_NIC.id
+  network_security_group_id = azurerm_network_security_group.ssh_nsg.id
+}
+
 
 // Define the Azure Virtual Machine resources for the Web VM.
 resource "azurerm_virtual_machine" "devopsrg_Web_VM" {

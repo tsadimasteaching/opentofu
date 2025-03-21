@@ -13,3 +13,8 @@ variable "vm_size" {
   description = "The size of the Virtual Machines."
   type        = string
 }
+
+variable "sub_id" {
+  description = "The subscription ID for the Azure account."
+  type        = string
+}
