@@ -118,3 +118,27 @@ resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_shutdown" {
     time_in_minutes = 30     # Notify 30 minutes before shutdown
   }
 }
+
+
+
+resource "local_file" "ssh_config" {
+  content = <<EOF
+Host devopsrg-web-vm
+  HostName ${azurerm_public_ip.devopsrg_Web_PIP.ip_address}
+  User azureuser
+  IdentityFile ${pathexpand("~/.ssh/id_rsa")}
+  Port 22
+  StrictHostKeyChecking no
+  UserKnownHostsFile=/dev/null
+EOF
+
+  filename = "/tmp/ssh_config"
+}
+
+resource "null_resource" "move_ssh_config" {
+  provisioner "local-exec" {
+    command = "cat /tmp/ssh_config >> ~/.ssh/config"
+  }
+
+  depends_on = [local_file.ssh_config]
+}
