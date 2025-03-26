@@ -29,5 +29,6 @@ source /opt/stack/devstack/openrc admin olympiakos1925!
    ➜ qemu-img convert -f raw -O qcow2 alpine-standard-3.21.3-x86_64.iso alpine.qcow2
 
 
+Links
 
-
+* https://registry.terraform.io/providers/terraform-provider-openstack/openstack/latest/docs

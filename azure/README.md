@@ -32,3 +32,4 @@ tofu apply --var-file=.tfvars
 
 https://www.iamachs.com/p/opentofu-azure/part-1-deploy-multi-tier-app-guide/
 https://learn.microsoft.com/en-us/azure/virtual-machines/windows/quick-create-terraform
+https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs
