@@ -26,6 +26,13 @@ resource "azurerm_public_ip" "devopsrg_Web_PIP" {
   allocation_method   = "Static"
 }
 
+resource "azurerm_public_ip" "microk8s_PIP" {
+  name                = "microk8s-pip"
+  location            = azurerm_resource_group.devops_rg.location
+  resource_group_name = azurerm_resource_group.devops_rg.name
+  allocation_method   = "Static"
+}
+
 
 # Create Network Security Group and rule
 resource "azurerm_network_security_group" "ssh_nsg" {
@@ -41,6 +48,18 @@ resource "azurerm_network_security_group" "ssh_nsg" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "MicroK8sAPI"
+    priority                   = 1002
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "16443"
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
@@ -60,6 +79,19 @@ resource "azurerm_network_interface" "devopsrg_Web_NIC" {
   }
 }
 
+resource "azurerm_network_interface" "microk8s_NIC" {
+  name                = "microk8s-nic"
+  location            = azurerm_resource_group.devops_rg.location
+  resource_group_name = azurerm_resource_group.devops_rg.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.devopsrg_subnet.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.microk8s_PIP.id
+  }
+}
+
 
 # Connect the security group to the network interface
 resource "azurerm_network_interface_security_group_association" "ssh_sg_association" {
@@ -67,6 +99,10 @@ resource "azurerm_network_interface_security_group_association" "ssh_sg_associat
   network_security_group_id = azurerm_network_security_group.ssh_nsg.id
 }
 
+resource "azurerm_network_interface_security_group_association" "microk8s_sg_association" {
+  network_interface_id      = azurerm_network_interface.microk8s_NIC.id
+  network_security_group_id = azurerm_network_security_group.ssh_nsg.id
+}
 
 // Define the Azure Virtual Machine resources for the Web VM.
 resource "azurerm_linux_virtual_machine" "devopsrg_Web_VM" {
@@ -103,6 +139,35 @@ resource "azurerm_linux_virtual_machine" "devopsrg_Web_VM" {
 }
 
 
+resource "azurerm_linux_virtual_machine" "microk8s_VM" {
+  name                  = "microk8s-vm"
+  location              = azurerm_resource_group.devops_rg.location
+  resource_group_name   = azurerm_resource_group.devops_rg.name
+  network_interface_ids = [azurerm_network_interface.microk8s_NIC.id]
+  size                  = var.vm_size
+  admin_username        = "azureuser"
+
+  admin_ssh_key {
+    username   = "azureuser"
+    public_key = file("~/.ssh/id_rsa.pub")
+  }
+
+  os_disk {
+    name                 = "microk8s-os-disk"
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "ubuntu-24_04-lts"
+    sku       = "server"
+    version   = "latest"
+  }
+
+  depends_on = [azurerm_public_ip.microk8s_PIP]
+}
+
 resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_shutdown" {
   virtual_machine_id = azurerm_linux_virtual_machine.devopsrg_Web_VM.id
   location           = azurerm_resource_group.devops_rg.location
@@ -119,12 +184,38 @@ resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_shutdown" {
   }
 }
 
+resource "azurerm_dev_test_global_vm_shutdown_schedule" "microk8s_shutdown" {
+  virtual_machine_id = azurerm_linux_virtual_machine.microk8s_VM.id
+  location           = azurerm_resource_group.devops_rg.location
+
+  daily_recurrence_time = "2200" # 10 PM local time (Athens)
+  timezone              = "E. Europe Standard Time" # Athens timezone
+
+  enabled = true
+
+  notification_settings {
+    enabled         = false
+    email           = var.email
+    time_in_minutes = 30
+  }
+}
+
+
+
 
 
 resource "local_file" "ssh_config" {
   content = <<EOF
 Host devopsrg-web-vm
   HostName ${azurerm_public_ip.devopsrg_Web_PIP.ip_address}
+  User azureuser
+  IdentityFile ${pathexpand("~/.ssh/id_rsa")}
+  Port 22
+  StrictHostKeyChecking no
+  UserKnownHostsFile=/dev/null
+
+Host microk8s-vm
+  HostName ${azurerm_public_ip.microk8s_PIP.ip_address}
   User azureuser
   IdentityFile ${pathexpand("~/.ssh/id_rsa")}
   Port 22
