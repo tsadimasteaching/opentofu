@@ -5,22 +5,22 @@ resource "azurerm_resource_group" "devops_rg" {
 
 // Define the Azure Virtual Network that will be used by the Web VM and App VM.
 resource "azurerm_virtual_network" "devopsrg_vnet" {
-  name                = "devopsrg-vnet"
+  name                = var.vnet_name
   resource_group_name = azurerm_resource_group.devops_rg.name
   location            = azurerm_resource_group.devops_rg.location
-  address_space       = ["10.0.0.0/16"]
+  address_space       = [var.vnet_address_space]
 }
 
 // Define the Azure Subnet for the VM.
 resource "azurerm_subnet" "devopsrg_subnet" {
-  name                 = "devopsrg-subnet"
+  name                 = var.subnet_name
   resource_group_name  = azurerm_resource_group.devops_rg.name
   virtual_network_name = azurerm_virtual_network.devopsrg_vnet.name
-  address_prefixes     = ["10.0.1.0/24"]
+  address_prefixes     = [var.subnet_address_prefix]
 }
 
 resource "azurerm_public_ip" "devopsrg_Web_PIP" {
-  name                = "devopsrg-web-pip"
+  name                = var.public_ip_name
   location            = azurerm_resource_group.devops_rg.location
   resource_group_name = azurerm_resource_group.devops_rg.name
   allocation_method   = "Static"
@@ -29,7 +29,7 @@ resource "azurerm_public_ip" "devopsrg_Web_PIP" {
 
 # Create Network Security Group and rule
 resource "azurerm_network_security_group" "ssh_nsg" {
-  name                = "myNetworkSecurityGroup"
+  name                = var.nsg_name
   location            = azurerm_resource_group.devops_rg.location
   resource_group_name = azurerm_resource_group.devops_rg.name
 
@@ -48,7 +48,7 @@ resource "azurerm_network_security_group" "ssh_nsg" {
 
 
 resource "azurerm_network_interface" "devopsrg_Web_NIC" {
-  name                = "devopsrg-web-nic"
+  name                = var.nic_name
   location            = azurerm_resource_group.devops_rg.location
   resource_group_name = azurerm_resource_group.devops_rg.name
 
@@ -70,7 +70,7 @@ resource "azurerm_network_interface_security_group_association" "ssh_sg_associat
 
 // Define the Azure Virtual Machine resources for the Web VM.
 resource "azurerm_linux_virtual_machine" "devopsrg_Web_VM" {
-  name                  = "devopsrg-web-vm"
+  name                  = var.vm_name
   location              = azurerm_resource_group.devops_rg.location
   resource_group_name   = azurerm_resource_group.devops_rg.name
   network_interface_ids = [azurerm_network_interface.devopsrg_Web_NIC.id]
@@ -85,7 +85,7 @@ resource "azurerm_linux_virtual_machine" "devopsrg_Web_VM" {
   }
 
   os_disk {
-    name              = "web-os-disk"
+    name              = var.os_disk_name
     caching           = "ReadWrite"
     # create_option     = "FromImage"
     storage_account_type = "Standard_LRS"
@@ -123,7 +123,7 @@ resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_shutdown" {
 
 resource "local_file" "ssh_config" {
   content = <<EOF
-Host devopsrg-web-vm
+Host ${var.vm_name}
   HostName ${azurerm_public_ip.devopsrg_Web_PIP.ip_address}
   User azureuser
   IdentityFile ${pathexpand("~/.ssh/id_rsa")}
