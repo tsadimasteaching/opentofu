@@ -9,6 +9,7 @@ resource "azurerm_virtual_network" "devopsrg_vnet" {
   resource_group_name = azurerm_resource_group.devops_rg.name
   location            = azurerm_resource_group.devops_rg.location
   address_space       = [var.vnet_address_space]
+  lifecycle { enabled = var.deploy_vm }
 }
 
 // Define the Azure Subnet for the VM.
@@ -17,6 +18,7 @@ resource "azurerm_subnet" "devopsrg_subnet" {
   resource_group_name  = azurerm_resource_group.devops_rg.name
   virtual_network_name = azurerm_virtual_network.devopsrg_vnet.name
   address_prefixes     = [var.subnet_address_prefix]
+  lifecycle { enabled = var.deploy_vm }
 }
 
 resource "azurerm_public_ip" "devopsrg_Web_PIP" {
@@ -24,6 +26,7 @@ resource "azurerm_public_ip" "devopsrg_Web_PIP" {
   location            = azurerm_resource_group.devops_rg.location
   resource_group_name = azurerm_resource_group.devops_rg.name
   allocation_method   = "Static"
+  lifecycle { enabled = var.deploy_vm }
 }
 
 
@@ -32,6 +35,7 @@ resource "azurerm_network_security_group" "ssh_nsg" {
   name                = var.nsg_name
   location            = azurerm_resource_group.devops_rg.location
   resource_group_name = azurerm_resource_group.devops_rg.name
+  lifecycle { enabled = var.deploy_vm }
 
   security_rule {
     name                       = "SSH"
@@ -51,6 +55,7 @@ resource "azurerm_network_interface" "devopsrg_Web_NIC" {
   name                = var.nic_name
   location            = azurerm_resource_group.devops_rg.location
   resource_group_name = azurerm_resource_group.devops_rg.name
+  lifecycle { enabled = var.deploy_vm }
 
   ip_configuration {
     name                          = "internal"
@@ -65,6 +70,7 @@ resource "azurerm_network_interface" "devopsrg_Web_NIC" {
 resource "azurerm_network_interface_security_group_association" "ssh_sg_association" {
   network_interface_id      = azurerm_network_interface.devopsrg_Web_NIC.id
   network_security_group_id = azurerm_network_security_group.ssh_nsg.id
+  lifecycle { enabled = var.deploy_vm }
 }
 
 
@@ -76,6 +82,7 @@ resource "azurerm_linux_virtual_machine" "devopsrg_Web_VM" {
   network_interface_ids = [azurerm_network_interface.devopsrg_Web_NIC.id]
   size               = var.vm_size
   admin_username      = "azureuser"
+  lifecycle { enabled = var.deploy_vm }
 
 
   admin_ssh_key {
@@ -111,6 +118,7 @@ resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_shutdown" {
   timezone              = "E. Europe Standard Time" # Athens timezone
 
   enabled = true
+  lifecycle { enabled = var.deploy_vm }
 
   notification_settings {
     enabled         = false  # Set to true if you want email notifications
@@ -122,6 +130,7 @@ resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_shutdown" {
 
 
 resource "local_file" "ssh_config" {
+  lifecycle { enabled = var.deploy_vm }
   content = <<EOF
 Host ${var.vm_name}
   HostName ${azurerm_public_ip.devopsrg_Web_PIP.ip_address}
@@ -136,6 +145,7 @@ EOF
 }
 
 resource "null_resource" "move_ssh_config" {
+  lifecycle { enabled = var.deploy_vm }
   provisioner "local-exec" {
     command = "cat /tmp/ssh_config >> ~/.ssh/config"
   }
