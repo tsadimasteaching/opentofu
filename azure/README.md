@@ -240,6 +240,70 @@ rm -rf .terraform .terraform.lock.hcl terraform.tfstate terraform.tfstate.backup
 
 > **Warning:** deleting `terraform.tfstate` while resources still exist in Azure will cause OpenTofu to lose track of them. Always run `tofu destroy` **before** cleaning local files.
 
+---
+
+## Cost estimation with Infracost
+
+[Infracost](https://www.infracost.io/) shows a cloud cost breakdown from the OpenTofu plan **before** you apply — no resources are created.
+
+### Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sh
+infracost --version
+```
+
+### Authenticate (free API key)
+
+```bash
+infracost auth login
+```
+
+Opens a browser to register/log in; stores the key in `~/.config/infracost/credentials.yml`.
+
+### Show cost breakdown
+
+```bash
+infracost breakdown \
+  --path . \
+  --terraform-var-file .tfvars
+```
+
+Runs `tofu plan` internally and prints a per-resource cost table.
+
+### Compare before vs. after a change
+
+```bash
+# 1. Save a baseline from the current configuration
+infracost breakdown --path . --terraform-var-file .tfvars \
+  --format json --out-file infracost-base.json
+
+# 2. Edit main.tf, webapp.tf, or .tfvars …
+
+# 3. Show the cost delta
+infracost diff --path . \
+  --terraform-var-file .tfvars \
+  --compare-to infracost-base.json
+```
+
+### Useful flags
+
+| Flag | Purpose |
+|---|---|
+| `--show-skipped` | List resources Infracost cannot price (free-tier, etc.) |
+| `--format json\|table\|html` | Change output format |
+| `--out-file report.html` | Save an HTML report |
+| `--terraform-var "vm_size=Standard_D2s_v3"` | Override a single variable inline |
+
+### Notes for this configuration
+
+- `deploy_vm = true` — main cost drivers are the VM SKU (`vm_size`) and the static public IP.
+- `deploy_webapp = true` — the PostgreSQL Flexible Server SKU (`postgres_sku_name`) is typically the largest cost item.
+- Resources with `lifecycle { enabled = false }` are skipped automatically since they won't be created.
+- Infracost uses on-demand Azure pricing; Reserved Instance or Azure Hybrid Benefit discounts are not reflected.
+
+> `infracost-base.json` is generated locally and should be added to `.gitignore` to avoid committing it.
+
 ## Links
 
 * [OpenTofu azurerm provider docs](https://search.opentofu.org/provider/opentofu/azurerm/latest)
