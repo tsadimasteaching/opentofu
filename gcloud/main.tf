@@ -1,7 +1,7 @@
 resource "google_compute_instance" "default" {
-  name         = "my-vm"
-  machine_type = "e2-standard-2"
-  zone         = "europe-west4-b"
+  name         = var.instance_name
+  machine_type = var.machine_type
+  zone         = var.zone
 
   boot_disk {
     initialize_params {
@@ -15,7 +15,7 @@ resource "google_compute_instance" "default" {
   }
 
   metadata = {
-    "ssh-keys" = "rg:${file("~/.ssh/id_rsa.pub")}"
+    "ssh-keys" = "${var.ssh_user}:${file("~/.ssh/id_rsa.pub")}"
   }
 
   tags = ["allow-ssh-http-https-8080"]
@@ -28,7 +28,7 @@ resource "google_compute_instance" "default" {
 
     connection {
       type        = "ssh"
-      user        = "rg"
+      user        = var.ssh_user
       private_key = file("~/.ssh/id_rsa")
       host        = self.network_interface[0].access_config[0].nat_ip
     }

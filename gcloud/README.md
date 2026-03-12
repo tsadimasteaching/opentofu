@@ -16,28 +16,44 @@ Deploys a Linux VM on Google Cloud Platform with a firewall rule allowing SSH, H
 * [Google Cloud SDK (`gcloud`)](https://cloud.google.com/sdk/docs/install) installed
 * [OpenTofu](https://opentofu.org/docs/intro/install/) installed
 * An SSH key pair at `~/.ssh/id_rsa` / `~/.ssh/id_rsa.pub`
+* A GCP service account JSON key (see setup below)
 
-Authenticate before running any commands:
+### Create a service account key
+
+1. Go to [GCP Console → IAM & Admin → Service Accounts](https://console.cloud.google.com/iam-admin/serviceaccounts)
+2. Create a service account and grant it the **Compute Admin** and **Service Account User** roles
+3. Keys tab → **Add Key → JSON** → download the file
+4. Copy it to your server:
 
 ```bash
-gcloud auth login
-gcloud auth application-default login
-gcloud projects list
-gcloud config set project <YOUR_PROJECT_ID>
+mkdir -p ~/.gcp
+mv ~/Downloads/your-key.json ~/.gcp/gcloud-key.json
+chmod 600 ~/.gcp/gcloud-key.json
 ```
 
-## Configuration
+Set the path in your `.tfvars` as the `credentials` variable.
 
-The configuration is currently hard-coded in `main.tf` and `provider.tf`. Edit those files directly to change:
+## Setup
 
-| Setting | Current value | File |
+### 1. Create your variables file
+
+```bash
+cp example.vars .tfvars
+```
+
+Edit `.tfvars` and fill in your values. The file is listed in `.gitignore` so secrets are not committed.
+
+### 2. Variables reference
+
+| Variable | Default | Description |
 |---|---|---|
-| GCP project ID | `hopeful-seat-418610` | `provider.tf` |
-| Region | `europe-west4-b` | `provider.tf` |
-| Zone | `europe-west4-b` | `main.tf` |
-| Machine type | `e2-standard-2` | `main.tf` |
-| OS image family | `ubuntu-2204-lts` | `main.tf` |
-| SSH username | `rg` | `main.tf` |
+| `project_id` | — | GCP project ID |
+| `region` | `europe-west4` | GCP region |
+| `zone` | `europe-west4-b` | GCP zone for the instance |
+| `machine_type` | `e2-standard-2` | Compute instance machine type |
+| `instance_name` | `my-vm` | Name of the compute instance |
+| `ssh_user` | — | Linux username for SSH access |
+| `credentials` | — | Path to the service account JSON key file |
 
 ## Usage
 
@@ -58,13 +74,13 @@ Checks that the configuration is syntactically valid and internally consistent. 
 ### Plan (preview changes)
 
 ```bash
-tofu plan
+tofu plan --var-file=.tfvars
 ```
 
 ### Apply (create resources)
 
 ```bash
-tofu apply
+tofu apply --var-file=.tfvars
 ```
 
 The public IP of the VM is printed at the end of apply:
@@ -77,13 +93,13 @@ Outputs:
 Connect to the VM with:
 
 ```bash
-ssh -i ~/.ssh/id_rsa rg@<instance_public_ip>
+ssh -i ~/.ssh/id_rsa <ssh_user>@<instance_public_ip>
 ```
 
 ### Destroy (delete all resources)
 
 ```bash
-tofu destroy
+tofu destroy --var-file=.tfvars
 ```
 
 ### Clean up local files

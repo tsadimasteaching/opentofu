@@ -10,6 +10,7 @@ terraform {
 }
 
 provider "google" {
-  project     = "hopeful-seat-418610"
-  region      = "europe-west4-b"
+  project     = var.project_id
+  region      = var.region
+  credentials = file(var.credentials)
 }

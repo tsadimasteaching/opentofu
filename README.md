@@ -114,12 +114,15 @@ See [azure/README.md](azure/README.md) for the full variables reference and reso
 
 ```bash
 cd gcloud/
+cp example.vars .tfvars
+# Edit .tfvars with your project ID, SSH user, credentials path, etc.
+
 tofu init
 tofu validate
-tofu plan
-tofu apply
+tofu plan  --var-file=.tfvars
+tofu apply --var-file=.tfvars
 # When finished:
-tofu destroy
+tofu destroy --var-file=.tfvars
 ```
 
 See [gcloud/README.md](gcloud/README.md) for details.
