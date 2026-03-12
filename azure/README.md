@@ -21,6 +21,7 @@ Both can be enabled simultaneously or independently.
 | `azurerm_public_ip` | Static public IP for the VM |
 | `azurerm_network_security_group` | NSG allowing inbound SSH (port 22) |
 | `azurerm_network_interface` | NIC attached to subnet and public IP |
+| `azurerm_network_interface_security_group_association` | Associates the NSG with the NIC |
 | `azurerm_linux_virtual_machine` | Ubuntu 24.04 LTS VM |
 | `azurerm_dev_test_global_vm_shutdown_schedule` | Auto-shutdown at 22:00 Athens time |
 | `local_file` + `null_resource` | Writes SSH config entry to `~/.ssh/config` |
@@ -95,7 +96,7 @@ Edit `.tfvars` and fill in your values. The file is listed in `.gitignore` so se
 | `public_ip_name` | Public IP resource name | `devopsrg-web-pip` |
 | `nsg_name` | Network Security Group name | `devopsrg-nsg` |
 | `nic_name` | Network Interface name | `devopsrg-web-nic` |
-| `ssh_public_key` | Contents of your SSH public key | `ssh-rsa AAAA...` |
+| `ssh_public_key` | SSH public key (defined but currently unused — `main.tf` reads `~/.ssh/id_rsa.pub` directly) | `ssh-rsa AAAA...` |
 
 #### Webapp scenario
 
